@@ -509,7 +509,7 @@ button{font-family:inherit;cursor:pointer}
         <div class="gift-body"><p class="gift-cat">Presente físico</p><h3 class="gift-h">Jogo de Taças de Cristal</h3>
         <p class="gift-d">Para brindar cada conquista da nova vida a dois.</p>
         <div class="gift-foot"><span class="gift-price">R$ 380</span>
-        <button class="gift-btn dark" onclick="openLink('tacas')">Presentear</button></div></div>
+        <button class="gift-btn dark" data-gift="tacas" onclick="openLink('tacas')">Presentear</button></div></div>
       </div>
 
       <div class="gift reveal">
@@ -517,7 +517,7 @@ button{font-family:inherit;cursor:pointer}
         <div class="gift-body"><p class="gift-cat">Presente físico</p><h3 class="gift-h">Conjunto de Panelas</h3>
         <p class="gift-d">Para que o nosso lar tenha sempre o cheiro de comida boa.</p>
         <div class="gift-foot"><span class="gift-price">R$ 520</span>
-        <button class="gift-btn dark" onclick="openLink('panelas')">Presentear</button></div></div>
+        <button class="gift-btn dark" data-gift="panelas" onclick="openLink('panelas')">Presentear</button></div></div>
       </div>
 
       <div class="gift reveal">
@@ -525,7 +525,7 @@ button{font-family:inherit;cursor:pointer}
         <div class="gift-body"><p class="gift-cat">Lua de mel</p><h3 class="gift-h">Passeio de Barco</h3>
         <p class="gift-d">Um dia inteiro navegando pelas ilhas de Florianópolis.</p>
         <div class="gift-foot"><span class="gift-price">R$ 250</span>
-        <button class="gift-btn tan" onclick="openPix('Passeio de Barco','R$ 250')">Contribuir</button></div></div>
+        <button class="gift-btn tan" data-gift="barco" onclick="openPix('Passeio de Barco','R$ 250')">Contribuir</button></div></div>
       </div>
 
       <div class="gift reveal">
@@ -533,7 +533,7 @@ button{font-family:inherit;cursor:pointer}
         <div class="gift-body"><p class="gift-cat">Lua de mel</p><h3 class="gift-h">Jantar à Beira-Mar</h3>
         <p class="gift-d">Uma noite especial sob as estrelas, só nós dois.</p>
         <div class="gift-foot"><span class="gift-price">R$ 320</span>
-        <button class="gift-btn tan" onclick="openPix('Jantar à Beira-Mar','R$ 320')">Contribuir</button></div></div>
+        <button class="gift-btn tan" data-gift="jantar" onclick="openPix('Jantar à Beira-Mar','R$ 320')">Contribuir</button></div></div>
       </div>
 
       <div class="gift reveal">
@@ -541,7 +541,7 @@ button{font-family:inherit;cursor:pointer}
         <div class="gift-body"><p class="gift-cat">Lua de mel</p><h3 class="gift-h">Cota da Viagem</h3>
         <p class="gift-d">Contribua com qualquer valor para a nossa lua de mel dos sonhos.</p>
         <div class="gift-foot"><span class="gift-price">Qualquer valor</span>
-        <button class="gift-btn tan" onclick="openPix('Cota da Viagem','valor livre')">Contribuir</button></div></div>
+        <button class="gift-btn tan" data-gift="viagem" onclick="openPix('Cota da Viagem','valor livre')">Contribuir</button></div></div>
       </div>
 
       <div class="gift reveal">
@@ -549,7 +549,7 @@ button{font-family:inherit;cursor:pointer}
         <div class="gift-body"><p class="gift-cat">Presente físico</p><h3 class="gift-h">Roupa de Cama Premium</h3>
         <p class="gift-d">Para tornar cada manhã do nosso lar ainda mais aconchegante.</p>
         <div class="gift-foot"><span class="gift-price">R$ 290</span>
-        <button class="gift-btn dark" onclick="openLink('cama')">Presentear</button></div></div>
+        <button class="gift-btn dark" data-gift="cama" onclick="openLink('cama')">Presentear</button></div></div>
       </div>
 
     </div>
@@ -687,34 +687,30 @@ async function carregarReservas(){
   try {
     const res = await fetch(CONFIG.sheetsUrl);
     const csv = await res.text();
-    // cada linha: id,status  ex: "tacas,RESERVADO"
-    csv.split('\n').forEach(linha => {
-      const [id, status] = linha.trim().split(',');
-      if(id && status && status.trim().toUpperCase() === 'RESERVADO'){
-        marcarReservado(id.trim());
+    // pula a primeira linha se for cabeçalho (não contém vírgula com RESERVADO)
+    const linhas = csv.split('\n').filter(l => l.trim());
+    linhas.forEach(linha => {
+      const partes = linha.trim().split(',');
+      const id = partes[0].trim().toLowerCase();
+      const status = (partes[1] || '').trim().toUpperCase();
+      if(id && status === 'RESERVADO'){
+        marcarReservado(id);
       }
     });
   } catch(e){
-    // silencioso — se falhar, os botões continuam funcionando normalmente
     console.warn('Sheets offline:', e);
   }
 }
 
 function marcarReservado(id){
-  // acha o botão cujo onclick contém o id e desativa
-  document.querySelectorAll('.gift-btn').forEach(btn => {
-    if(btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'"+id+"'")){
-      btn.textContent = 'Reservado ✓';
-      btn.disabled = true;
-      btn.style.background = '#c8bfad';
-      btn.style.cursor = 'default';
-      btn.style.opacity = '.7';
-      btn.onclick = null;
-      // risca o preço
-      const price = btn.closest('.gift-foot')?.querySelector('.gift-price');
-      if(price) price.style.textDecoration = 'line-through';
-    }
-  });
+  const btn = document.querySelector(`[data-gift="${id}"]`);
+  if(!btn) return;
+  btn.textContent = 'Reservado ✓';
+  btn.disabled = true;
+  btn.style.cssText = 'background:#c8bfad;cursor:default;opacity:.7;pointer-events:none';
+  btn.onclick = null;
+  const price = btn.closest('.gift-foot')?.querySelector('.gift-price');
+  if(price) price.style.textDecoration = 'line-through';
 }
 
 // Quando alguém clica Presentear: abre WhatsApp avisando os noivos
