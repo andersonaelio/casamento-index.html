@@ -685,10 +685,10 @@ function enviarRSVP(){
 async function carregarReservas(){
   if(!CONFIG.sheetsUrl || CONFIG.sheetsUrl.startsWith('COLE_AQUI')) return;
   try {
-    const res = await fetch(CONFIG.sheetsUrl);
+    const res = await fetch(CONFIG.sheetsUrl + '&t=' + Date.now(), {cache: 'no-store'});
     const csv = await res.text();
     // pula a primeira linha se for cabeçalho (não contém vírgula com RESERVADO)
-    const linhas = csv.split('\n').filter(l => l.trim());
+    const linhas = csv.split('\n').filter(l => l.trim() && l.includes(','));
     linhas.forEach(linha => {
       const partes = linha.trim().split(',');
       const id = partes[0].trim().toLowerCase();
